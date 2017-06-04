@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Président</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/iziToast.min.css">
+</head>
+<body>
+  <div id="login">
+    <p>Veuillez vous connecter avant de commencer la partie</p>
+    <input type="text" id="name" placeholder="Identifiant" tabindex="0">
+  </div>
+  <div id="board" class="hidden">
+    <div id="stack" title="Cliquer pour voir quelles cartes ont été posées en dernier."></div>
+    <div id="opponent-after" class="opponent-name vertical"></div>
+    <div id="opponent-front" class="opponent-name"></div>
+    <div id="opponent-before" class="opponent-name vertical"></div>
+    <div id="hand-after" class="opponent-hand vertical"></div>
+    <div id="hand-front" class="opponent-hand"></div>
+    <div id="hand-before" class="opponent-hand vertical"></div>
+    <div id="myself" data-id="myself" class="opponent-name"></div>
+    <div id="hand"></div>
+    <div id="log"></div>
+    <button class="button" id="play" disabled></button>
+    <button class="button" id="pass" disabled></button>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/iziToast.min.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
