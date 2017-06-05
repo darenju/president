@@ -283,12 +283,6 @@ var room = function (name, io) {
     });
   }
 
-  // if (getPlayersLength() < 4) {
-  //   socket.emit('playersNeeded', 4 - getPlayersLength());
-  // } else if (getPlayersLength() > 4) {
-  //   socket.emit('currentlyPlaying');
-  // }
-
   this.join = function (socket) {
     function newPlayer (name) {
       utils.info('Bienvenue, ' + name);

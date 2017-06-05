@@ -37,7 +37,7 @@ io.on('connection', function (socket) {
   socket.on('join', function (roomName, name) {
     var room = findRoomByName(roomName);
 
-    if (room) {
+    if (room && room.players() < 4) {
       socket.join(roomName);
       room.join(socket);
     }
