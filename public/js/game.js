@@ -13,6 +13,7 @@ function $(sel) {
 
 var loginForm = $('#login');
 var board = $('#board');
+var roomsSelect = $('#rooms');
 var loginName = $('#name');
 var playButton = $('#play');
 var passButton = $('#pass');
@@ -152,22 +153,35 @@ function buildOpponentsHands() {
   });
 }
 
+function showRooms(rooms) {
+  roomsSelect.innerHTML = '';
+
+  rooms.forEach(function (room) {
+    var roomOption = document.createElement('option');
+    roomOption.value = room;
+    roomOption.textContent = room;
+    roomsSelect.appendChild(roomOption);
+  });
+}
+
 var socket = io();
+
+socket.on('roomsList', showRooms);
 
 // ping pong
 setInterval(function () {
   socket.emit('stillHere');
 }, 3000);
 
-socket.on('currentlyPlaying', function () {
-  info('Une partie est déjà en train de se jouer.', 'Désolé…');
-});
+// socket.on('currentlyPlaying', function () {
+//   info('Une partie est déjà en train de se jouer.', 'Désolé…');
+// });
 
 socket.on('playersNeeded', function (needed) {
   info('Il manque ' + needed + ' joueurs.');
 });
 
-function startPlaying(name) {
+function startPlaying(name, roomName) {
   socket.emit('newPlayer', name);
 
   socket.on('receiveHand', function (cards) {
@@ -334,5 +348,6 @@ function login(name) {
   loginForm.classList.add('hidden');
   board.classList.remove('hidden');
   myself.innerHTML = name;
-  startPlaying(name);
+  socket.emit('join', roomsSelect.value, name);
+  startPlaying(name, roomsSelect.value);
 }
