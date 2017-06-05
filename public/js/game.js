@@ -158,8 +158,8 @@ function showRooms(rooms) {
 
   rooms.forEach(function (room) {
     var roomOption = document.createElement('option');
-    roomOption.value = room;
-    roomOption.textContent = room;
+    roomOption.value = room.name;
+    roomOption.textContent = room.name + ' (' + room.players + ')';
     roomsSelect.appendChild(roomOption);
   });
 }

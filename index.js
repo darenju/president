@@ -15,6 +15,15 @@ function findRoomByName (name) {
   });
 }
 
+function getRoomsNamesAndPlayersCounts () {
+  return rooms.map(function (room) {
+    return {
+      name: room.name,
+      players: room.players()
+    };
+  });
+}
+
 app.use(express.static(__dirname + '/public'));
 
 app.get('/', function (req, res) {
@@ -23,7 +32,7 @@ app.get('/', function (req, res) {
 
 io.on('connection', function (socket) {
   // envoyer la liste des rooms
-  socket.emit('roomsList', rooms.map(function (room) { return room.name; }));
+  socket.emit('roomsList', getRoomsNamesAndPlayersCounts());
 
   socket.on('join', function (roomName, name) {
     var room = findRoomByName(roomName);

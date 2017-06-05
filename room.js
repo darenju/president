@@ -80,6 +80,8 @@ var room = function (name, io) {
     return getPlayers().length;
   }
 
+  this.players = getPlayersLength;
+
   /**
    * Retourne l'objet du joueur en train de jouer
    * @return {object}
