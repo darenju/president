@@ -13,6 +13,7 @@ function $(sel) {
 
 var loginForm = $('#login');
 var board = $('#board');
+var roomsSelect = $('#rooms');
 var loginName = $('#name');
 var playButton = $('#play');
 var passButton = $('#pass');
@@ -152,152 +153,184 @@ function buildOpponentsHands() {
   });
 }
 
+function showRooms(rooms) {
+  roomsSelect.innerHTML = '';
+
+  rooms.forEach(function (room) {
+    var roomOption = document.createElement('option');
+    roomOption.value = room.name;
+    roomOption.textContent = room.name + ' (' + room.players + ')';
+
+    if (room.players === 4) {
+      roomOption.setAttribute('disabled');
+    }
+
+    roomsSelect.appendChild(roomOption);
+  });
+}
+
 var socket = io();
+
+socket.on('roomsList', showRooms);
 
 // ping pong
 setInterval(function () {
   socket.emit('stillHere');
 }, 3000);
 
-socket.on('currentlyPlaying', function () {
-  info('Une partie est déjà en train de se jouer.', 'Désolé…');
-});
-
 socket.on('playersNeeded', function (needed) {
   info('Il manque ' + needed + ' joueurs.');
 });
 
-function startPlaying(name) {
+function receiveHand (cards) {
+  hand.innerHTML = '';
+
+  buildOpponentsHands();
+
+  cards.forEach(function (card) {
+    var cardDiv = createCard(card);
+    cardDiv.addEventListener('click', toggleSelectedCard.bind(cardDiv));
+
+    hand.appendChild(cardDiv);
+  });
+}
+
+function stack (cards) {
+  lastCards = [];
+
+  cards.forEach(function (card) {
+    var cardDiv = createCard(card, true);
+    stackCards.push(cardDiv);
+    lastCards.push(cardDiv);
+
+    stack.appendChild(cardDiv);
+  });
+}
+
+function validCoup () {
+  selectedDivs.forEach(function (card) {
+    card.parentNode.removeChild(card);
+  });
+
+  selectedCards = [];
+  selectedDivs = [];
+  isPlaying = false;
+
+  playButton.setAttribute('disabled', '');
+  passButton.setAttribute('disabled', '');
+}
+
+function playerTurn (who, id) {
+  info('C\'est à ' + who + ' de jouer.');
+
+  setPlayingPlayer(id);
+}
+
+function passed (who) {
+  info(who + ' a passé son tour.');
+}
+
+function newStack () {
+  lastCards = [];
+
+  stack.classList.add('finished');
+
+  setTimeout(function () {
+    stack.classList.remove('finished');
+    stack.innerHTML = '';
+  }, 1000);
+}
+
+function wasSkipped (who, next, id) {
+  setPlayingPlayer(id);
+  error(who + ' a fait passer votre tour ! C\'est à ' + next + ' de jouer.');
+}
+
+function someoneWasSkipped (who, skipped, next, id) {
+  setPlayingPlayer(id);
+  info(who + ' a fait passer le tour de ' + skipped + ' ! C\'est à ' + next + ' de jouer.');
+}
+
+function skippedAndYourTurn (who, skipped, previous, id) {
+  setPlayingPlayer(id);
+  success(who + ' a fait passer le tour de ' + skipped + ' ! C\'est à vous de jouer.');
+
+  yourTurn(previous);
+}
+
+function someoneWon (who) {
+  info(who + ' est président !');
+}
+
+function won () {
+  success('Vous êtes président !');
+}
+
+function someoneLost (who) {
+  info(who + ' est le trou du cul !');
+}
+
+function lost () {
+  error('Vous êtes le trou du cul !');
+}
+
+function someoneFinished (who) {
+  info(who + ' a terminé.');
+}
+
+function finished () {
+  success('Vous avez terminé.');
+}
+
+function opponentsCards (cards) {
+  hands.forEach(function (hand, index) {
+    var opponentsCards = hand.querySelectorAll('.opponent-card');
+
+    for (var i = 0; i < opponentsCards.length - cards[index]; i++) {
+      hand.removeChild(hand.lastChild)
+    }
+  });
+}
+
+function opponentsNames (names, ids) {
+  opponentsNames.forEach(function (opponentName, index) {
+    opponentName.dataset.id = ids[index];
+    opponentName.innerHTML = names[index];
+  });
+}
+
+function gameFinished (winnerName, loserName) {
+  iziToast.show({
+    title: 'Partie terminée !',
+    timeout: 10000,
+    message: 'La partie vient de se terminer.<br><b>' + winnerName + '</b> est le président.<br>' + loserName + ' est le trou du cul.',
+    position: 'center',
+    color: 'blue'
+  });
+}
+
+function startPlaying (name, roomName) {
   socket.emit('newPlayer', name);
 
-  socket.on('receiveHand', function (cards) {
-    hand.innerHTML = '';
-
-    buildOpponentsHands();
-
-    cards.forEach(function (card) {
-      var cardDiv = createCard(card);
-      cardDiv.addEventListener('click', toggleSelectedCard.bind(cardDiv));
-
-      hand.appendChild(cardDiv);
-    });
-  });
-
+  socket.on('receiveHand', receiveHand);
   socket.on('yourTurn', yourTurn);
-
-  socket.on('stack', function (cards) {
-    lastCards = [];
-
-    cards.forEach(function (card) {
-      var cardDiv = createCard(card, true);
-      stackCards.push(cardDiv);
-      lastCards.push(cardDiv);
-
-      stack.appendChild(cardDiv);
-    });
-  });
-
-  socket.on('validCoup', function () {
-    selectedDivs.forEach(function (card) {
-      card.parentNode.removeChild(card);
-    });
-
-    selectedCards = [];
-    selectedDivs = [];
-    isPlaying = false;
-
-    playButton.setAttribute('disabled', '');
-    passButton.setAttribute('disabled', '');
-  });
-
-  socket.on('playerTurn', function (who, id) {
-    info('C\'est à ' + who + ' de jouer.');
-
-    setPlayingPlayer(id);
-  });
-
-  socket.on('passed', function (who) {
-    info(who + ' a passé son tour.');
-  });
-
-  socket.on('newStack', function () {
-    lastCards = [];
-
-    stack.classList.add('finished');
-
-    setTimeout(function () {
-      stack.classList.remove('finished');
-      stack.innerHTML = '';
-    }, 1000);
-  });
-
-  socket.on('wasSkipped', function (who, next, id) {
-    setPlayingPlayer(id);
-    error(who + ' a fait passer votre tour ! C\'est à ' + next + ' de jouer.');
-  });
-
-  socket.on('someoneWasSkipped', function (who, skipped, next, id) {
-    setPlayingPlayer(id);
-    info(who + ' a fait passer le tour de ' + skipped + ' ! C\'est à ' + next + ' de jouer.');
-  });
-
-  socket.on('skippedAndYourTurn', function (who, skipped, previous, id) {
-    setPlayingPlayer(id);
-    success(who + ' a fait passer le tour de ' + skipped + ' ! C\'est à vous de jouer.');
-
-    yourTurn(previous);
-  });
-
-  socket.on('someoneWon', function (who) {
-    info(who + ' est président !');
-  });
-
-  socket.on('won', function () {
-    success('Vous êtes président !');
-  });
-
-  socket.on('someoneLost', function (who) {
-    info(who + ' est le trou du cul !');
-  });
-
-  socket.on('lost', function () {
-    error('Vous êtes le trou du cul !');
-  });
-
-  socket.on('someoneFinished', function (who) {
-    info(who + ' a terminé.');
-  });
-
-  socket.on('finished', function () {
-    success('Vous avez terminé.');
-  });
-
-  socket.on('opponentsCards', function (cards) {
-    hands.forEach(function (hand, index) {
-      var opponentsCards = hand.querySelectorAll('.opponent-card');
-
-      for (var i = 0; i < opponentsCards.length - cards[index]; i++) {
-        hand.removeChild(hand.lastChild)
-      }
-    });
-  });
-
-  socket.on('opponentsNames', function (names, ids) {
-    opponentsNames.forEach(function (opponentName, index) {
-      opponentName.dataset.id = ids[index];
-      opponentName.innerHTML = names[index];
-    });
-  });
-
-  socket.on('gameFinished', function (winnerName, loserName) {
-    iziToast.show({
-      title: 'Partie terminée !',
-      timeout: 10000,
-      message: 'La partie vient de se terminer.<br><b>' + winnerName + '</b> est le président.<br>' + loserName + ' est le trou du cul.',
-      position: 'center',
-      color: 'blue'
-    });
-  });
+  socket.on('stack', stack);
+  socket.on('validCoup', validCoup);
+  socket.on('playerTurn', playerTurn);
+  socket.on('passed', passed);
+  socket.on('newStack', newStack);
+  socket.on('wasSkipped', wasSkipped);
+  socket.on('someoneWasSkipped', someoneWasSkipped);
+  socket.on('skippedAndYourTurn', skippedAndYourTurn);
+  socket.on('someoneWon', someoneWon);
+  socket.on('won', won);
+  socket.on('someoneLost', someoneLost);
+  socket.on('lost', lost);
+  socket.on('someoneFinished', someoneFinished);
+  socket.on('finished', finished);
+  socket.on('opponentsCards', opponentsCards);
+  socket.on('opponentsNames', opponentsNames);
+  socket.on('gameFinished', gameFinished);
 
   stack.addEventListener('click', function () {
     lastCards.forEach(function (card) {
@@ -334,5 +367,6 @@ function login(name) {
   loginForm.classList.add('hidden');
   board.classList.remove('hidden');
   myself.innerHTML = name;
-  startPlaying(name);
+  socket.emit('join', roomsSelect.value, name);
+  startPlaying(name, roomsSelect.value);
 }
