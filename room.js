@@ -269,7 +269,6 @@ var room = function (name, io) {
 
   function sendNames() {
     getPlayers().forEach(function (player, index) {
-      var currentPlayer = players[player];
       var names = []; // dans l'ordre : joueur après, joueur encore après, joueur avant
       var ids = [];
 
@@ -279,7 +278,7 @@ var room = function (name, io) {
         ids.push(getPlayerId(curr));
       }
 
-      currentPlayer.conn.emit('opponentsNames', names, ids);
+      getPlayerFromIndex(index).conn.emit('opponentsNames', names, ids);
     });
   }
 

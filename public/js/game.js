@@ -156,10 +156,13 @@ function buildOpponentsHands() {
 function showRooms(rooms) {
   roomsSelect.innerHTML = '';
 
-  rooms.forEach(function (room) {
+  rooms.forEach(function (room, index) {
     var roomOption = document.createElement('option');
     roomOption.value = room.name;
     roomOption.textContent = room.name + ' (' + room.players + ')';
+    if (index === 0) {
+      roomOption.setAttribute('selected', '');
+    }
 
     if (room.players === 4) {
       roomOption.setAttribute('disabled');
@@ -195,7 +198,7 @@ function receiveHand (cards) {
   });
 }
 
-function stack (cards) {
+function stackNewCards (cards) {
   lastCards = [];
 
   cards.forEach(function (card) {
@@ -282,7 +285,7 @@ function finished () {
   success('Vous avez terminé.');
 }
 
-function opponentsCards (cards) {
+function receivedOpponentsCards (cards) {
   hands.forEach(function (hand, index) {
     var opponentsCards = hand.querySelectorAll('.opponent-card');
 
@@ -292,7 +295,7 @@ function opponentsCards (cards) {
   });
 }
 
-function opponentsNames (names, ids) {
+function receivedOpponentsNames (names, ids) {
   opponentsNames.forEach(function (opponentName, index) {
     opponentName.dataset.id = ids[index];
     opponentName.innerHTML = names[index];
@@ -314,7 +317,7 @@ function startPlaying (name, roomName) {
 
   socket.on('receiveHand', receiveHand);
   socket.on('yourTurn', yourTurn);
-  socket.on('stack', stack);
+  socket.on('stack', stackNewCards);
   socket.on('validCoup', validCoup);
   socket.on('playerTurn', playerTurn);
   socket.on('passed', passed);
@@ -328,8 +331,8 @@ function startPlaying (name, roomName) {
   socket.on('lost', lost);
   socket.on('someoneFinished', someoneFinished);
   socket.on('finished', finished);
-  socket.on('opponentsCards', opponentsCards);
-  socket.on('opponentsNames', opponentsNames);
+  socket.on('opponentsCards', receivedOpponentsCards);
+  socket.on('opponentsNames', receivedOpponentsNames);
   socket.on('gameFinished', gameFinished);
 
   stack.addEventListener('click', function () {
